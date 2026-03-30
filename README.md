@@ -168,6 +168,54 @@ Edit the top of `daily.py`:
 | `REPO_PREFIX` | `gigilo-` | Prefix for daily repos. Repos named `gigilo-MMDD` (e.g. `gigilo-0329`). |
 | `GITHUB_USER` | `ipogodin` | GitHub username. |
 
+## Managing the cron job
+
+### View current cron jobs
+
+```bash
+crontab -l
+```
+
+### Remove gigilo cron jobs
+
+```bash
+crontab -l 2>/dev/null | grep -v gigilo | crontab -
+```
+
+### Change cron schedule
+
+Remove the old jobs and re-add with new times. For example, to prepare at 22:00 and push at 23:01:
+
+```bash
+crontab -l 2>/dev/null | grep -v gigilo | crontab -
+(crontab -l 2>/dev/null; echo "0 22 * * * \$HOME/gigilo-prepare.sh"; echo "1 23 * * * \$HOME/gigilo-push.sh") | crontab -
+```
+
+## Testing with a specific date
+
+To push a specific date (e.g. July 4th 2026) for testing:
+
+```bash
+# Preview the date first
+python3 -c "
+from daily import prepare, push
+from datetime import date
+d = date(2026, 7, 4)
+from daily import preview
+preview(d)
+"
+
+# Generate and push it
+python3 -c "
+from daily import prepare, push
+from datetime import date
+prepare(date(2026, 7, 4))
+push()
+"
+```
+
+After verifying, run `python3 daily.py now` to restore today's date.
+
 ## Troubleshooting
 
 | Problem | Solution |
