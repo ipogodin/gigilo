@@ -77,7 +77,7 @@ Verify: check your GitHub profile's current year contribution graph.
 Create the cron scripts:
 
 ```bash
-# Prepare script (runs at 23:50 — generates tomorrow's commits locally)
+# Prepare script (runs at 23:40 — generates tomorrow's commits locally)
 cat << 'SCRIPT' > ~/gigilo-prepare.sh
 #!/bin/bash
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
@@ -99,7 +99,7 @@ chmod +x ~/gigilo-push.sh
 Add both cron jobs:
 
 ```bash
-(crontab -l 2>/dev/null | grep -v gigilo; echo "50 23 * * * \$HOME/gigilo-prepare.sh"; echo "1 0 * * * \$HOME/gigilo-push.sh") | crontab -
+(crontab -l 2>/dev/null | grep -v gigilo; echo "40 23 * * * \$HOME/gigilo-prepare.sh"; echo "1 0 * * * \$HOME/gigilo-push.sh") | crontab -
 ```
 
 ### 7. Verify cron
@@ -109,7 +109,7 @@ Add both cron jobs:
 crontab -l
 
 # Expected output:
-# 50 23 * * * $HOME/gigilo-prepare.sh
+# 40 23 * * * $HOME/gigilo-prepare.sh
 # 1 0 * * * $HOME/gigilo-push.sh
 
 # After the first run, check logs:

@@ -3,10 +3,16 @@
 GitHub Contribution Date Display — Daily Script
 
 Two-phase operation:
-  python3 daily.py prepare   # Run at 23:50 — generates tomorrow's date repo locally
-  python3 daily.py push      # Run at 00:01 — pushes to GitHub (deletes old, creates new)
-  python3 daily.py now       # Run both phases immediately for today's date
-  python3 daily.py preview   # ASCII preview of tomorrow's date (or today with --today)
+  python3 daily.py prepare              # Generates tomorrow's date repo locally
+  python3 daily.py push                 # Pushes to GitHub (deletes old, creates new)
+  python3 daily.py now                  # Prepare + push for today's date
+  python3 daily.py preview              # ASCII preview of tomorrow's date
+  python3 daily.py preview --today      # ASCII preview of today's date
+
+Custom date (DD/MM/YYYY, today, tomorrow, yesterday):
+  python3 daily.py prepare 20/03/2026   # Prepare a specific date
+  python3 daily.py now yesterday        # Prepare + push yesterday's date
+  python3 daily.py preview 04/07/2026   # Preview a specific date
 """
 
 import subprocess
@@ -140,8 +146,11 @@ def prepare(target_date):
             make_commit(date_str, f'[{c+1}/{count}]', env)
         total_commits += count
 
-        if (i + 1) % 50 == 0:
-            print(f'  {i+1}/{len(all_dates)} days done')
+        pct = (i + 1) * 100 // len(all_dates)
+        bar = '█' * (pct // 2) + '░' * (50 - pct // 2)
+        print(f'\r  [{bar}] {pct}% ({i+1}/{len(all_dates)} days)', end='', flush=True)
+
+    print()  # newline after progress bar
 
     # Save target date so push() knows the repo name
     with open(DATE_FILE, 'w') as f:
@@ -242,6 +251,23 @@ def preview(target_date):
     print(f'  Pixels: {len(on_dates)}')
 
 
+def parse_date(s):
+    """Parse date from 'today', 'tomorrow', 'yesterday', or DD/MM/YYYY."""
+    now = datetime.now(TIMEZONE)
+    s = s.lower().strip()
+    if s == 'today':
+        return now.date()
+    if s == 'tomorrow':
+        return (now + timedelta(days=1)).date()
+    if s == 'yesterday':
+        return (now - timedelta(days=1)).date()
+    try:
+        return datetime.strptime(s, '%d/%m/%Y').date()
+    except ValueError:
+        print(f'Invalid date: {s}  (use DD/MM/YYYY, today, tomorrow, or yesterday)')
+        sys.exit(1)
+
+
 def main():
     now = datetime.now(TIMEZONE)
     tomorrow = (now + timedelta(days=1)).date()
@@ -252,16 +278,23 @@ def main():
         sys.exit(1)
 
     cmd = sys.argv[1]
+    # Optional date argument (last arg): DD/MM/YYYY, today, tomorrow, yesterday
+    custom_date = None
+    if len(sys.argv) >= 3 and sys.argv[-1] not in ('--today',):
+        custom_date = parse_date(sys.argv[-1])
 
     if cmd == 'prepare':
-        prepare(tomorrow)
+        prepare(custom_date or tomorrow)
     elif cmd == 'push':
         push()
     elif cmd == 'now':
-        prepare(today)
+        prepare(custom_date or today)
         push()
     elif cmd == 'preview':
-        target = today if '--today' in sys.argv else tomorrow
+        if custom_date:
+            target = custom_date
+        else:
+            target = today if '--today' in sys.argv else tomorrow
         preview(target)
     else:
         print(f'Unknown command: {cmd}')
