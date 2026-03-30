@@ -1,4 +1,5 @@
 .date-staging/
+.date-staging-target
 __pycache__/
 test_data/
 contributions.txt

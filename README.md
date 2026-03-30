@@ -4,7 +4,7 @@ Displays the current date (MM/DD/YYYY) on the GitHub contribution graph using pi
 
 Two repos work together:
 - **`gigilo-history`** — Static repo with word art on years 2013-2024. Push once, never changes.
-- **`gigilo-date`** — Recreated fresh every night. Shows today's date on the current year view.
+- **`gigilo-MMDD`** — Recreated fresh every night with a unique name (e.g. `gigilo-0329`). Shows today's date on the current year view. Old date repos are auto-deleted.
 
 GitHub counts contributions across all repos, so both appear on the same profile.
 
@@ -124,15 +124,15 @@ cat /tmp/gigilo-cron.log
 
 | Time | What happens |
 |------|-------------|
-| **23:50** | `daily.py prepare` — calculates tomorrow's date, generates ~2,000 commits in a local staging directory (`.date-staging/`) |
-| **00:01** | `daily.py push` — deletes `gigilo-date` on GitHub, creates it fresh, pushes the pre-built commits |
+| **23:50** | `daily.py prepare` — calculates tomorrow's date, generates ~4,000 commits in a local staging directory (`.date-staging/`) |
+| **00:01** | `daily.py push` — deletes all old `gigilo-*` date repos, creates a new one with a unique name (`gigilo-MMDD`), pushes the pre-built commits |
 
-The push is a clean first push to a brand-new repo, so GitHub indexes it immediately.
+The push is a clean first push to a brand-new repo with a never-before-used name, so GitHub indexes it immediately without caching issues.
 
 ### Why two repos?
 
 - `gigilo-history` is static — 2013-2024 word art never changes, so it's pushed once
-- `gigilo-date` is recreated daily — avoids ghost data, force push issues, and GitHub caching problems
+- `gigilo-MMDD` is recreated daily with a unique name — avoids ghost data, force push issues, and GitHub caching problems
 - GitHub counts contributions across all repos, so both show on the same profile
 
 ### File overview
@@ -165,7 +165,7 @@ Edit the top of `daily.py`:
 | `TIMEZONE` | UTC-7 (PDT) | Display timezone. Change to UTC-8 for PST. |
 | `COMMITS_PER_PIXEL` | 40 | Commits per "on" pixel. Must outshine organic contributions from other repos. |
 | `BG_COMMITS` | 2 | Background commits per day (light green). |
-| `REPO_NAME` | `gigilo-date` | Name of the daily repo on GitHub. |
+| `REPO_PREFIX` | `gigilo-` | Prefix for daily repos. Repos named `gigilo-MMDD` (e.g. `gigilo-0329`). |
 | `GITHUB_USER` | `ipogodin` | GitHub username. |
 
 ## Troubleshooting

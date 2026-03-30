@@ -19,9 +19,10 @@ from datetime import datetime, timedelta, date, timezone
 TIMEZONE = timezone(timedelta(hours=-7))  # US Pacific (PDT). Change to -8 for PST.
 COMMITS_PER_PIXEL = 40    # Must be high enough to outshine organic contributions
 BG_COMMITS = 2            # Background: light green
-REPO_NAME = 'gigilo-date'
+REPO_PREFIX = 'gigilo-'   # Daily repos named gigilo-MMDD (unique name each day to avoid GitHub caching)
 GITHUB_USER = 'ipogodin'
 WORK_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.date-staging')
+DATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.date-staging-target')
 
 # ── Digit font (5 rows tall, variable width) ──────────────────────────
 FONT = {
@@ -142,27 +143,58 @@ def prepare(target_date):
         if (i + 1) % 50 == 0:
             print(f'  {i+1}/{len(all_dates)} days done')
 
+    # Save target date so push() knows the repo name
+    with open(DATE_FILE, 'w') as f:
+        f.write(target_date.isoformat())
+
     print(f'  Prepared: {len(all_dates)} days, {total_commits} commits')
     return total_commits
 
 
+def get_repo_name(target_date):
+    """Generate unique repo name for a given date: gigilo-MMDD"""
+    return f'{REPO_PREFIX}{target_date.month:02d}{target_date.day:02d}'
+
+
+def delete_old_repos():
+    """Delete all old gigilo-MMDD repos from GitHub."""
+    result = subprocess.run(
+        ['gh', 'repo', 'list', GITHUB_USER, '--limit', '200', '--json', 'name', '-q', '.[].name'],
+        capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        return
+    for name in result.stdout.strip().split('\n'):
+        if name.startswith(REPO_PREFIX) and name != 'gigilo-history':
+            print(f'  Deleting old repo: {name}')
+            subprocess.run(
+                ['gh', 'repo', 'delete', f'{GITHUB_USER}/{name}', '--yes'],
+                capture_output=True,
+            )
+
+
 def push():
-    """Phase 2: Delete old repo on GitHub, create new one, push."""
+    """Phase 2: Delete old repos on GitHub, create new one with unique name, push."""
     print(f'Pushing to GitHub...')
 
     if not os.path.exists(os.path.join(WORK_DIR, '.git')):
         print('ERROR: No prepared repo found. Run "daily.py prepare" first.')
         sys.exit(1)
 
-    # Delete old repo (ignore errors if it doesn't exist)
-    subprocess.run(
-        ['gh', 'repo', 'delete', f'{GITHUB_USER}/{REPO_NAME}', '--yes'],
-        capture_output=True,
-    )
+    # Read target date to determine repo name
+    if not os.path.exists(DATE_FILE):
+        print('ERROR: No target date found. Run "daily.py prepare" first.')
+        sys.exit(1)
+    with open(DATE_FILE) as f:
+        target_date = date.fromisoformat(f.read().strip())
+    repo_name = get_repo_name(target_date)
 
-    # Create new repo and push
+    # Delete all old gigilo-* repos
+    delete_old_repos()
+
+    # Create new repo with unique name and push
     result = subprocess.run(
-        ['gh', 'repo', 'create', REPO_NAME, '--public'],
+        ['gh', 'repo', 'create', repo_name, '--public'],
         capture_output=True, text=True,
     )
     if result.returncode != 0:
@@ -171,7 +203,7 @@ def push():
 
     # Add remote and push
     subprocess.run(
-        ['git', 'remote', 'add', 'origin', f'git@github.com:{GITHUB_USER}/{REPO_NAME}.git'],
+        ['git', 'remote', 'add', 'origin', f'git@github.com:{GITHUB_USER}/{repo_name}.git'],
         capture_output=True, cwd=WORK_DIR,
     )
     result = subprocess.run(
@@ -180,7 +212,7 @@ def push():
         timeout=600,
     )
     if result.returncode == 0:
-        print(f'  Done! Pushed to {GITHUB_USER}/{REPO_NAME}')
+        print(f'  Done! Pushed to {GITHUB_USER}/{repo_name}')
     else:
         print(f'  Push failed: {result.stderr}')
         sys.exit(1)
