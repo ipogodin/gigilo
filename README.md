@@ -163,7 +163,7 @@ Edit the top of `daily.py`:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `TIMEZONE` | UTC-7 (PDT) | Display timezone. Change to UTC-8 for PST. |
-| `COMMITS_PER_PIXEL` | 15 | Commits per "on" pixel. Increase if ghost data visible. |
+| `COMMITS_PER_PIXEL` | 40 | Commits per "on" pixel. Must outshine organic contributions from other repos. |
 | `BG_COMMITS` | 2 | Background commits per day (light green). |
 | `REPO_NAME` | `gigilo-date` | Name of the daily repo on GitHub. |
 | `GITHUB_USER` | `ipogodin` | GitHub username. |

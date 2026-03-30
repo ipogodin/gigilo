@@ -17,7 +17,7 @@ from datetime import datetime, timedelta, date, timezone
 
 # ── Configuration ──────────────────────────────────────────────────────
 TIMEZONE = timezone(timedelta(hours=-7))  # US Pacific (PDT). Change to -8 for PST.
-COMMITS_PER_PIXEL = 15    # Clean repo, no ghost data — 15 is enough contrast
+COMMITS_PER_PIXEL = 40    # Must be high enough to outshine organic contributions
 BG_COMMITS = 2            # Background: light green
 REPO_NAME = 'gigilo-date'
 GITHUB_USER = 'ipogodin'
